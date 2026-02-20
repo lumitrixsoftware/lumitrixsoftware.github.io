@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lumitrix Software | L'Avenir de la Technologie</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;700&display=swap" rel="stylesheet">
+    
+    <!-- GSAP pour les animations UI -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    
+    <!-- Three.js pour la 3D -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <style>
+        :root {
+            --primary: #00f0ff;
+            --secondary: #ff003c;
+            --bg-color: #030305;
+            --text-color: #ffffff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            cursor: none; /* On cache le curseur par défaut pour en créer un personnalisé */
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            overflow-x: hidden;
+        }
+
+        /* Curseur personnalisé */
+        .cursor {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--primary);
+            border-radius: 50%;
+            position: fixed;
+            pointer-events: none;
+            z-index: 9999;
+            transform: translate(-50%, -50%);
+            transition: width 0.2s, height 0.2s, background-color 0.2s;
+        }
+        .cursor-dot {
+            width: 4px;
+            height: 4px;
+            background: var(--secondary);
+            border-radius: 50%;
+            position: fixed;
+            pointer-events: none;
+            z-index: 9999;
+            transform: translate(-50%, -50%);
+        }
+
+        /* Conteneur 3D */
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+        }
+        
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            padding: 25px 10%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+            background: rgba(3, 3, 5, 0.2);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        nav .logo {
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+
+        nav .logo span {
+            color: var(--primary);
+            text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+        }
+
+        nav ul {
+            display: flex;
+            list-style: none;
+            gap: 30px;
+        }
+
+        nav ul li a {
+            color: white;
+            text-decoration: none;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: color 0.3s;
+        }
+
+        nav ul li a:hover {
+            color: var(--primary);
+        }
+
+        /* Sections */
+        section {
+            min-height: 100vh;
+            padding: 120px 10%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            z-index: 1;
+        }
+        
+        /* Hero Section */
+        .hero h1 {
+            font-size: clamp(3rem, 6vw, 6rem);
+            line-height: 1.1;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+        
+        .hero p {
+            font-size: clamp(1rem, 1.5vw, 1.5rem);
+            max-width: 600px;
+            margin-bottom: 40px;
+            color: #b0b0b0;
+            line-height: 1.6;
+        }
+        
+        /* Bouton */
+        .btn {
+            padding: 15px 40px;
+            background: rgba(0, 240, 255, 0.1);
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            font-size: 16px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 700;
+            border-radius: 30px;
+            backdrop-filter: blur(5px);
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            text-decoration: none;
+        }
+        
+        .btn:hover {
+            background: var(--primary);
+            color: var(--bg-color);
+            box-shadow: 0 0 30px rgba(0, 240, 255, 0.6);
+            transform: translateY(-3px);
+        }
+        
+        /* Glassmorphism Panel */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(15px);
+            padding: 60px;
+            border-radius: 30px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
+        
+        /* Grille de services */
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 40px;
+            margin-top: 60px;
+            perspective: 1000px;
+        }
+
+        .service-card {
+            background: linear-gradient(145deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.01) 100%);
+            padding: 40px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), border-color 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .service-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 2px;
+            background: linear-gradient(90deg, transparent, var(--primary), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.5s;
+        }
+
+        .service-card:hover::before {
+            transform: translateX(100%);
+        }
+
+        .service-card:hover {
+            transform: translateY(-15px) rotateX(5deg) rotateY(-5deg);
+            border-color: rgba(0, 240, 255, 0.3);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4), 0 0 20px rgba(0, 240, 255, 0.1);
+        }
+
+        .service-card h3 {
+            color: var(--text-color);
+            margin-bottom: 20px;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+        }
+
+        .service-card h3::before {
+            content: '0' counter(card-counter) '.';
+            counter-increment: card-counter;
+            color: var(--primary);
+            font-size: 14px;
+            margin-right: 15px;
+            opacity: 0.7;
+        }
+
+        .services-grid {
+            counter-reset: card-counter;
+        }
+
+        .service-card p {
+            color: #999;
+            line-height: 1.7;
+        }
+        
+        /* Utilitaires de texte */
+        .gradient-text {
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: inline-block;
+        }
+        
+        .title-section {
+            font-size: clamp(2rem, 4vw, 3.5rem);
+            margin-bottom: 30px;
+        }
+
+        footer {
+            text-align: center;
+            padding: 40px;
+            border-top: 1px solid rgba(255,255,255,0.05);
+            color: #555;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    
+    <!-- Curseurs personnalisés -->
+    <div class="cursor"></div>
+    <div class="cursor-dot"></div>
+
+    <!-- Rendu 3D -->
+    <div id="canvas-container"></div>
+    
+    <!-- Navigation -->
+    <nav>
+        <div class="logo">Lumi<span>trix</span></div>
+        <ul>
+            <li><a href="#home">Accueil</a></li>
+            <li><a href="#about">Vision</a></li>
+            <li><a href="#services">Solutions</a></li>
+        </ul>
+    </nav>
+
+    <!-- Section Accueil -->
+    <section class="hero" id="home">
+        <h1 class="gsap-hero">Ingénierie<br><span class="gradient-text">Sans Limite</span></h1>
+        <p class="gsap-hero">Lumitrix Software redéfinit le paysage numérique avec des solutions logicielles dopées à l'intelligence artificielle et au rendu 3D haute performance.</p>
+        <div class="gsap-hero">
+            <a href="#services" class="btn">Explorer nos technologies</a>
+        </div>
+    </section>
+
+    <!-- Section À Propos -->
+    <section id="about">
+        <div class="glass-panel gsap-fade">
+            <h2 class="title-section">Notre Vision</h2>
+            <p style="font-size: 1.2rem; line-height: 1.8; color: #ccc;">
+                Chez Lumitrix, nous ne codons pas de simples logiciels. Nous sculptons l'avenir de l'interaction humain-machine. 
+                Nos algorithmes avant-gardistes et nos architectures cloud résilientes propulsent vos idées dans la dimension supérieure. 
+                Nous transformons la complexité en élégance technologique absolue.
+            </p>
+        </div>
+    </section>
+
+    <!-- Section Services -->
+    <section id="services">
+        <h2 class="title-section gsap-fade">Écosystème <span class="gradient-text">Technologique</span></h2>
+        <div class="services-grid">
+            <div class="service-card gsap-card">
+                <h3>IA & Machine Learning</h3>
+                <p>Des réseaux de neurones sur-mesure pour automatiser vos processus métiers complexes, analyser vos données en temps réel et prédire les tendances de demain.</p>
+            </div>
+            <div class="service-card gsap-card">
+                <h3>Moteurs Web 3D</h3>
+                <p>Des expériences immersives en WebGL intégrées directement dans le navigateur, repoussant les frontières de l'interaction et du design visuel.</p>
+            </div>
+            <div class="service-card gsap-card">
+                <h3>Architectures Cloud</h3>
+                <p>Des infrastructures distribuées, ultra-sécurisées et scalables (Kubernetes, microservices) pour supporter des charges de travail planétaires.</p>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <p>&copy; 2024 Lumitrix Software. Tous droits réservés. L'innovation en mouvement.</p>
+    </footer>
+
+    <script>
+        // ==========================================
+        // 1. CURSEUR PERSONNALISÉ
+        // ==========================================
+        const cursor = document.querySelector('.cursor');
+        const cursorDot = document.querySelector('.cursor-dot');
+        
+        document.addEventListener('mousemove', (e) => {
+            cursorDot.style.left = e.clientX + 'px';
+            cursorDot.style.top = e.clientY + 'px';
+            
+            // Un léger délai pour le grand cercle (effet élastique)
+            cursor.animate({
+                left: e.clientX + 'px',
+                top: e.clientY + 'px'
+            }, { duration: 500, fill: "forwards" });
+        });
+
+        // Effet au survol des liens et boutons
+        const interactables = document.querySelectorAll('a, .btn, .service-card');
+        interactables.forEach(el => {
+            el.addEventListener('mouseenter', () => {
+                cursor.style.width = '50px';
+                cursor.style.height = '50px';
+                cursor.style.backgroundColor = 'rgba(0, 240, 255, 0.1)';
+            });
+            el.addEventListener('mouseleave', () => {
+                cursor.style.width = '20px';
+                cursor.style.height = '20px';
+                cursor.style.backgroundColor = 'transparent';
+            });
+        });
+
+        // ==========================================
+        // 2. ANIMATIONS THREE.JS (ARRIÈRE-PLAN 3D)
+        // ==========================================
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        
+        // Brouillard pour la profondeur
+        scene.fog = new THREE.FogExp2(0x030305, 0.015);
+
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.z = 40;
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Optimisation des perfs
+        container.appendChild(renderer.domElement);
+
+        // -- Création de la forme centrale (Torus Knot filaire) --
+        const geometry = new THREE.TorusKnotGeometry(12, 3.5, 200, 32);
+        const material = new THREE.MeshPhysicalMaterial({
+            color: 0x000000,
+            wireframe: true,
+            emissive: 0x001133, // Lueur bleutée
+            emissiveIntensity: 0.5
+        });
+        const torusKnot = new THREE.Mesh(geometry, material);
+        scene.add(torusKnot);
+
+        // -- Création du système de particules --
+        const particlesGeometry = new THREE.BufferGeometry();
+        const particlesCount = 2500;
+        const posArray = new Float32Array(particlesCount * 3);
+        
+        for(let i = 0; i < particlesCount * 3; i++) {
+            // Répartition spatiale des particules
+            posArray = (Math.random() - 0.5) * 150;
+        }
+        
+        particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+        const particlesMaterial = new THREE.PointsMaterial({
+            size: 0.15,
+            color: 0x00f0ff,
+            transparent: true,
+            opacity: 0.6,
+            blending: THREE.AdditiveBlending
+        });
+        const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
+        scene.add(particlesMesh);
+
+        // -- Lumières --
+        const pointLight1 = new THREE.PointLight(0x00f0ff, 3, 100);
+        pointLight1.position.set(20, 20, 20);
+        scene.add(pointLight1);
+
+        const pointLight2 = new THREE.PointLight(0xff003c, 3, 100);
+        pointLight2.position.set(-20, -20, 20);
+        scene.add(pointLight2);
+
+        // -- Interaction avec la souris pour la 3D --
+        let mouseX = 0;
+        let mouseY = 0;
+        let targetX = 0;
+        let targetY = 0;
+        const windowHalfX = window.innerWidth / 2;
+        const windowHalfY = window.innerHeight / 2;
+
+        document.addEventListener('mousemove', (event) => {
+            mouseX = (event.clientX - windowHalfX);
+            mouseY = (event.clientY - windowHalfY);
+        });
+
+        // Boucle d'animation 3D
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const elapsedTime = clock.getElapsedTime();
+
+            // Rotation automatique continue
+            torusKnot.rotation.y += 0.002;
+            torusKnot.rotation.x += 0.001;
+            torusKnot.rotation.z += 0.001;
+
+            // Mouvement flottant des particules
+            particlesMesh.rotation.y = -elapsedTime * 0.03;
+            particlesMesh.position.y = Math.sin(elapsedTime * 0.5) * 2;
+
+            // La forme centrale suit la souris avec de l'inertie (Lerp)
+            targetX = mouseX * 0.001;
+            targetY = mouseY * 0.001;
+            
+            torusKnot.rotation.y += 0.05 * (targetX - torusKnot.rotation.y);
+            torusKnot.rotation.x += 0.05 * (targetY - torusKnot.rotation.x);
+
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        // Gestion du redimensionnement de la fenêtre
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+
+        // ==========================================
+        // 3. ANIMATIONS GSAP (UI & SCROLL)
+        // ==========================================
+        gsap.registerPlugin(ScrollTrigger);
+
+        // Animation d'entrée au chargement (Héro)
+        gsap.from(".gsap-hero", {
+            y: 80,
+            opacity: 0,
+            duration: 1.5,
+            stagger: 0.2,
+            ease: "power4.out",
+            delay: 0.2
+        });
+
+        // Animations au défilement pour les panneaux de texte
+        gsap.utils.toArray('.gsap-fade').forEach(element => {
+            gsap.from(element, {
+                scrollTrigger: {
+                    trigger: element,
+                    start: "top 85%", // Déclenchement quand l'élément atteint 85% de la fenêtre
+                    toggleActions: "play none none reverse"
+                },
+                y: 50,
+                opacity: 0,
+                duration: 1.2,
+                ease: "power3.out"
+            });
+        });
+
+        // Animation en cascade pour les cartes de services
+        gsap.from(".gsap-card", {
+            scrollTrigger: {
+                trigger: ".services-grid",
+                start: "top 80%",
+            },
+            y: 100,
+            opacity: 0,
+            duration: 1,
+            stagger: 0.2, // Délai entre chaque carte
+            ease: "back.out(1.5)"
+        });
+
+        // Effet Parallax sur la 3D lors du scroll
+        window.addEventListener('scroll', () => {
+            const scrollY = window.scrollY;
+            camera.position.y = -(scrollY * 0.01);
+        });
+
+    </script>
+</body>
+</html>
